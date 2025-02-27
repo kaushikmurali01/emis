@@ -1,0 +1,1334 @@
+<!DOCTYPE html>
+<html lang="en"> 
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Energy Management Information System</title>
+
+    <!-- Google Fonts -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600&family=Roboto:wght@400&family=Roboto+Condensed&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- jsPDF and jsPDF-AutoTable -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+    <!-- docx and FileSaver -->
+    <script src="https://cdn.jsdelivr.net/npm/docx@7.6.0/build/index.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
+    <style>
+      /* Base Reset & Modern Layout */
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: "Roboto", sans-serif;
+        background: #eef2f5;
+        color: #333;
+        padding-bottom: 80px;
+      }
+      /* Header */
+      .header {
+        display: flex;
+        align-items: center;
+        background-color: white;
+        padding: 20px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        position: fixed;
+        width: 100%;
+        top: 0;
+        left: 0;
+        z-index: 100;
+      }
+      .header img {
+        width: 180px;
+        margin-right: 20px;
+        padding-bottom: 10px;
+        margin-top: 7px;
+      }
+      .header h1 {
+        font-family: "Montserrat", sans-serif;
+        font-size: 32px;
+        color: #00609c;
+        text-align: center;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        width: 70%;
+      }
+      /* Container */
+      .container {
+        max-width: 850px;
+        width: 95%;
+        margin: 120px auto 50px;
+        background: #fff;
+        padding: 25px 30px;
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        overflow-y: auto;
+        display: none;
+        position: relative;
+      }
+      .container.active {
+        display: block;
+      }
+      .container h1 {
+        font-family: "Montserrat", sans-serif;
+        font-size: 28px;
+        margin-bottom: 20px;
+        text-align: center;
+        color: #00609c;
+      }
+      .form-group {
+        margin-bottom: 15px;
+      }
+      .form-group label {
+        font-size: 16px;
+        margin-bottom: 5px;
+        display: block;
+        color: #333;
+      }
+      .form-group input[type="text"],
+      .form-group textarea,
+      .form-group select {
+        width: 100%;
+        padding: 10px;
+        font-size: 16px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        background: #fafafa;
+      }
+      /* Buttons */
+      .actions {
+        text-align: center;
+        margin-top: 20px;
+      }
+      .actions button {
+        background: #00609c;
+        color: #fff;
+        border: none;
+        padding: 12px 35px;
+        font-size: 18px;
+        border-radius: 8px;
+        cursor: pointer;
+        margin: 5px;
+        transition: background 0.3s, transform 0.3s;
+      }
+      .actions button:hover {
+        background: #004b75;
+        transform: translateY(-2px);
+      }
+      /* Footer */
+      .footer {
+        background: #00609c;
+        color: #fff;
+        text-align: center;
+        padding: 10px 20px;
+        position: fixed;
+        bottom: 0;
+        width: 100%;
+      }
+      .footer a {
+        color: #fff;
+        text-decoration: none;
+        padding: 0 5px;
+        border: 2px solid transparent;
+        transition: border 0.3s;
+      }
+      .footer a:hover {
+        border: 2px solid #fff;
+        border-radius: 4px;
+      }
+      /* Custom Alert */
+      #custom-alert {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+      }
+      .alert-content {
+        background: #fff;
+        padding: 20px 30px;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        text-align: center;
+        max-width: 400px;
+        width: 90%;
+      }
+      #alert-message {
+        margin-bottom: 20px;
+        font-size: 16px;
+      }
+      #alert-ok {
+        background: #0071b7;
+        color: #fff;
+        border: none;
+        padding: 10px 20px;
+        font-size: 14px;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      #alert-ok:hover {
+        background: #005a94;
+      }
+      /* ---------------------------
+         EMIS Technical Specifications Styling
+      --------------------------- */
+      /* Top Navigation for Categories */
+      .emis-topnav {
+        width: 100%;
+        background: #f7f7f7;
+        border-bottom: 1px solid #ddd;
+        padding: 5px 30px;
+        display: flex;
+        justify-content: center;
+        border-radius: 4px;
+      }
+      .emis-topnav ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+      }
+      .emis-topnav ul li {
+        padding: 8px 12px;
+        border-right: 1px solid #ddd;
+        font-size: 11px;
+        font-family: "Montserrat", sans-serif;
+        cursor: pointer;
+        margin-right: 5px;
+      }
+      .emis-topnav ul li:last-child {
+        border-right: none;
+      }
+      .emis-topnav ul li:hover,
+      .emis-topnav ul li.active {
+        background: #00609c;
+        color: #fff;
+        border-radius: 4px;
+      }
+      /* EMIS Content Area */
+      .emis-content {
+        margin-top: 20px;
+        padding: 15px;
+      }
+      /* Each EMIS Item – full width, vertical layout */
+      .emis-item {
+        margin-bottom: 15px;
+        padding: 15px;
+        border: 1px solid #eee;
+        border-radius: 4px;
+        background: #fcfcfc;
+      }
+      .emis-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px;
+        font-size: 16px;
+        font-weight: bold;
+      }
+      .emis-header input[type="checkbox"] {
+        transform: scale(1.2);
+      }
+      .emis-item .content {
+        display: none;
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 1px dashed #ddd;
+        font-size: 14px;
+        white-space: pre-line;
+      }
+      .emis-item .content p {
+        margin-bottom: 8px;
+      }
+      /* Input Controls for Composite and Groups */
+      .composite-part,
+      .radio-group,
+      .checkbox-group {
+        margin-bottom: 10px;
+      }
+      .composite-part label {
+        font-weight: bold;
+        margin-bottom: 5px;
+        display: block;
+      }
+      .composite-part input[type="text"],
+      .composite-part select {
+        width: 100%;
+        padding: 8px;
+        font-size: 14px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        background: #fff;
+      }
+      .radio-group {
+        display: flex;
+        gap: 20px;
+      }
+      .radio-group label {
+        font-size: 14px;
+      }
+      .checkbox-group {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+      }
+      .checkbox-group label {
+        font-size: 14px;
+      }
+      .multi-group {
+        margin-top: 10px;
+      }
+      .multi-group .group-title {
+        font-weight: bold;
+        margin-bottom: 5px;
+      }
+      /* ---------------------------
+         Technical Objectives Styling
+      --------------------------- */
+      .objective-item {
+        background: #fff;
+        padding: 15px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        margin-bottom: 15px;
+      }
+      .objective-item p {
+        font-size: 16px;
+        margin-bottom: 8px;
+      }
+      /* ---------------------------
+         Report Styling
+      --------------------------- */
+      .report-section h2 {
+        font-family: "Montserrat", sans-serif;
+        font-size: 24px;
+        margin-bottom: 10px;
+        border-bottom: 1px solid #ccc;
+        padding-bottom: 5px;
+      }
+      .report-section h3 {
+        font-family: "Montserrat", sans-serif;
+        font-size: 20px;
+        margin: 10px 0 5px 20px;
+      }
+      .report-section p {
+        margin-left: 40px;
+        margin-bottom: 5px;
+        font-size: 16px;
+        white-space: pre-line;
+      }
+      /* File Type Selection */
+      #file-type-selection {
+        margin: 20px 0;
+        text-align: center;
+      }
+      #file-type-selection label {
+        margin-right: 20px;
+        font-size: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Header -->
+    <div class="header">
+      <img class="logo" src="./Enerva-logo.png" alt="Logo" />
+      <h1>Energy Management Information System</h1>
+    </div>
+
+    <!-- Organization Information Page -->
+    <div class="container active" id="org-page">
+      <h1>ORGANIZATION INFORMATION</h1>
+      <form id="org-info-form">
+        <div class="form-group">
+          <label for="application-name">Application ID:</label>
+          <input type="text" id="application-name" required />
+        </div>
+        <div class="form-group">
+          <label for="organization-name">Organization Name:</label>
+          <input type="text" id="organization-name" required />
+        </div>
+        <div class="form-group">
+          <label for="organization-type">Facility Type:</label>
+          <select id="organization-type">
+            <option value="11 - Agriculture, forestry, fishing and hunting">11 - Agriculture, forestry, fishing and hunting</option>
+            <option value="21 - Mining, quarrying, and oil and gas extraction">21 - Mining, quarrying, and oil and gas extraction</option>
+            <option value="22 - Utilities">22 - Utilities</option>
+            <option value="23 - Construction">23 - Construction</option>
+            <option value="31-32-33 - Manufacturing">31-32-33 - Manufacturing</option>
+            <option value="48 - Transportation">48 - Transportation</option>
+            <option value="56 - Administrative and support, waste management and remediation services">56 - Administrative and support, waste management and remediation services</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="site-address">Facility Address:</label>
+          <input type="text" id="site-address" required />
+        </div>
+        <div class="form-group">
+          <label for="facilitator-name">Facilitator Name:</label>
+          <select id="facilitator-name" required>
+            <option value="">Select a Facilitator</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="attendee-names">Attendee Name:</label>
+          <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 15px">
+            <input type="text" id="attendee-names" placeholder="Enter attendee name" />
+            <button type="button" id="add-attendee-btn">Add</button>
+          </div>
+          <ul id="attendee-list" style="list-style: none; padding: 0;"></ul>
+        </div>
+        <div class="actions">
+          <button type="button" id="to-objectives">Next: Technical Objectives</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Technical Objectives Page -->
+    <div class="container" id="objectives-page">
+      <h1>TECHNICAL OBJECTIVES</h1>
+      <form id="objectives-form">
+        <div class="objective-item">
+          <p>Facilitate continuous energy management and increased operational efficiency</p>
+          <label><input type="radio" name="objective1" value="True" /> True</label>
+          <label><input type="radio" name="objective1" value="False" checked /> False</label>
+        </div>
+        <div class="objective-item">
+          <p>Enable the organization to reduce portfolio energy use by [X] percent</p>
+          <label><input type="radio" name="objective2" value="True" /> True</label>
+          <label><input type="radio" name="objective2" value="False" checked /> False</label>
+        </div>
+        <div class="objective-item">
+          <p>Automate energy performance analysis using an energy information system</p>
+          <label><input type="radio" name="objective3" value="True" /> True</label>
+          <label><input type="radio" name="objective3" value="False" checked /> False</label>
+        </div>
+        <div class="objective-item">
+          <p>Perform automated fault detection and diagnostics (FDD) for the HVAC system</p>
+          <label><input type="radio" name="objective4" value="True" /> True</label>
+          <label><input type="radio" name="objective4" value="False" checked /> False</label>
+        </div>
+        <div class="objective-item">
+          <p>Achieve automated system optimization with the EMIS software performing supervisory control to supplement the BAS</p>
+          <label><input type="radio" name="objective5" value="True" /> True</label>
+          <label><input type="radio" name="objective5" value="False" checked /> False</label>
+        </div>
+        <div class="objective-item">
+          <p>Track the impact of energy efficiency projects, and measure and verify savings</p>
+          <label><input type="radio" name="objective6" value="True" /> True</label>
+          <label><input type="radio" name="objective6" value="False" checked /> False</label>
+        </div>
+        <div class="objective-item">
+          <p>Track and manage peak demand</p>
+          <label><input type="radio" name="objective7" value="True" /> True</label>
+          <label><input type="radio" name="objective7" value="False" checked /> False</label>
+        </div>
+        <div class="objective-item">
+          <p>Produce reports for energy and utility management, operations, and maintenance</p>
+          <label><input type="radio" name="objective8" value="True" /> True</label>
+          <label><input type="radio" name="objective8" value="False" checked /> False</label>
+        </div>
+        <div class="objective-item">
+          <p>Support implementation of ISO 50001 Ready</p>
+          <label><input type="radio" name="objective9" value="True" /> True</label>
+          <label><input type="radio" name="objective9" value="False" checked /> False</label>
+        </div>
+        <div class="actions">
+          <!-- Save objectives form data before leaving -->
+          <button type="button" id="to-emis">Next: EMIS Technical Specifications</button>
+          <button type="button" id="objectives-back">Back</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- EMIS Technical Specifications Page with Top Navigation -->
+    <div class="container" id="emis-page">
+      <h1>EMIS TECHNICAL SPECIFICATIONS</h1>
+      <!-- Top Navigation for Categories -->
+      <div class="emis-topnav">
+        <ul id="emis-topnav-list"></ul>
+      </div>
+      <!-- EMIS Content Area -->
+      <div class="emis-content" id="emis-tab-contents"></div>
+      <div class="actions">
+        <button type="button" id="emis-submit">Submit Assessment</button>
+        <button type="button" id="emis-back">Back</button>
+      </div>
+    </div>
+
+    <!-- Report Page with Separate Download Buttons -->
+    <div class="container" id="report-page">
+      <h1>Assessment Report</h1>
+      <div id="report-content" class="report-section"></div>
+      <div class="actions">
+        <button type="button" id="download-docx">Download Report</button>
+        <button type="button" id="report-back">Back</button>
+      </div>
+    </div>
+
+    <!-- Custom Alert -->
+    <div id="custom-alert">
+      <div class="alert-content">
+        <p id="alert-message">This is a custom alert message.</p>
+        <button id="alert-ok">OK</button>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <p>Copyright © 2024 Enerva Energy Solutions Inc. All Rights Reserved</p>
+      <a href="https://enerva.ca/privacy-policy" id="privacy-policy">Privacy</a>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+      /* Helper Functions for Saving/Loading Form Data */
+      function saveFormData(formId, storageKey) {
+        const form = document.getElementById(formId);
+        const formData = new FormData(form);
+        const dataObj = {};
+        for (const [key, value] of formData.entries()) {
+          dataObj[key] = value;
+        }
+        localStorage.setItem(storageKey, JSON.stringify(dataObj));
+      }
+
+      function loadFormData(formId, storageKey) {
+        const savedData = localStorage.getItem(storageKey);
+        if (!savedData) return;
+        const dataObj = JSON.parse(savedData);
+        const form = document.getElementById(formId);
+        for (const key in dataObj) {
+          if (form.elements[key]) {
+            form.elements[key].value = dataObj[key];
+          }
+        }
+      }
+
+      /* Helper Functions for EMIS Data */
+      function saveCheckboxStates() {
+    const checkboxes = document.querySelectorAll("input[type='checkbox']");
+    const checkboxStates = {};
+    checkboxes.forEach(checkbox => {
+        checkboxStates[checkbox.id] = checkbox.checked;
+    });
+    localStorage.setItem("checkboxStates", JSON.stringify(checkboxStates));
+}
+
+function loadCheckboxStates() {
+    const savedStates = localStorage.getItem("checkboxStates");
+    if (savedStates) {
+        const checkboxStates = JSON.parse(savedStates);
+        Object.keys(checkboxStates).forEach(id => {
+            const checkbox = document.getElementById(id);
+            if (checkbox) {
+                checkbox.checked = checkboxStates[id];
+            }
+        });
+    }
+}
+
+      /* Global Variables */
+      let userInfo = {};
+      let responses = { objectives: {}, emis: {} };
+      let attendeeList = [];
+
+      /* Attendee List */
+      const attendeeInput = document.getElementById("attendee-names");
+      const attendeeListElement = document.getElementById("attendee-list");
+      function renderAttendees() {
+        attendeeListElement.innerHTML = "";
+        attendeeList.forEach((name, index) => {
+          const li = document.createElement("li");
+          li.style.display = "flex";
+          li.style.justifyContent = "space-between";
+          li.style.alignItems = "center";
+          li.style.marginBottom = "10px";
+          li.style.padding = "10px";
+          li.style.border = "1px solid #ddd";
+          li.style.borderRadius = "4px";
+          li.textContent = name;
+          const removeBtn = document.createElement("button");
+          removeBtn.textContent = "Remove";
+          removeBtn.style.backgroundColor = "#ff6b6b";
+          removeBtn.style.color = "#fff";
+          removeBtn.style.border = "none";
+          removeBtn.style.borderRadius = "4px";
+          removeBtn.style.cursor = "pointer";
+          removeBtn.onclick = () => {
+            attendeeList.splice(index, 1);
+            renderAttendees();
+          };
+          li.appendChild(removeBtn);
+          attendeeListElement.appendChild(li);
+        });
+      }
+      document.getElementById("add-attendee-btn").addEventListener("click", () => {
+        const name = attendeeInput.value.trim();
+        if (name) {
+          attendeeList.push(name);
+          attendeeInput.value = "";
+          renderAttendees();
+        } else {
+          alert("Please enter a name!");
+        }
+      });
+
+      /* Page Navigation */
+      function showPage(pageId) {
+    saveCheckboxStates();  // Save checkbox states before switching pages
+
+    document.querySelectorAll(".container").forEach(page => page.classList.remove("active"));
+    document.getElementById(pageId).classList.add("active");
+
+    loadCheckboxStates();  // Load checkbox states on new page
+}
+
+
+      document.getElementById("to-objectives").addEventListener("click", () => {
+        const appId = document.getElementById("application-name").value.trim();
+        if (!appId) {
+          alert("Please enter an Application ID.");
+          return;
+        }
+        userInfo = {
+          appId: document.getElementById("application-name").value,
+          orgName: document.getElementById("organization-name").value,
+          orgType: document.getElementById("organization-type").value,
+          siteAddress: document.getElementById("site-address").value,
+          facilitatorName: document.getElementById("facilitator-name").value,
+          attendeeNames: attendeeList
+        };
+        showPage("objectives-page");
+      });
+
+      document.getElementById("objectives-back").addEventListener("click", () => {
+        showPage("org-page");
+      });
+
+      document.getElementById("to-emis").addEventListener("click", () => {
+        // Save objectives form data
+        saveFormData("objectives-form", "objectivesData");
+        const form = document.getElementById("objectives-form");
+        for (let i = 1; i <= 9; i++) {
+          responses.objectives["Objective " + i] = form.elements["objective" + i].value;
+        }
+        showPage("emis-page");
+        buildEmisTopnav();
+        buildEmisContent(0);
+      });
+
+      document.getElementById("emis-back").addEventListener("click", () => {
+        showPage("objectives-page");
+      });
+
+      document.getElementById("report-back").addEventListener("click", () => {
+        showPage("emis-page");
+      });
+
+      /* EMIS Data Structure */
+      const emisData = [
+        {
+          category: "1. Data Integration",
+          subItems: [
+            {
+              id: "1.1",
+              label: "Utility data integration",
+              description: "The technology will provide the capability to integrate utility meter data from existing systems (i.e. SELECTED CHECKBOX)",
+              inputType: "checkboxGroup",
+              options: ["Electricity", "Natural Gas", "Propane", "Steam", "Chilled Water", "Water", "Waste Water", "Compressed Air", "Renewable Energy"]
+            },
+            {
+              id: "1.2",
+              label: "Interval meter data integration",
+              description: "* The technology will integrate with new and existing meters and monitoring systems from an interval meter and/or meters with pulse outputs. Where it is necessary to take advantage of existing metering data, the technology will integrate with the following systems for whole facility meters and/or submeters:",
+              inputType: "composite",
+              parts: [
+                {
+                  partLabel: "Specify submeters:",
+                  inputType: "textbox",
+                  placeholder: "Enter submeters..."
+                },
+                {
+                  partLabel: "Desired data collection interval:",
+                  inputType: "radioAndTextbox",
+                  options: ["hourly", "sub-hourly"],
+                  textboxPlaceholder: "Enter time (in minutes)"
+                }
+              ],
+              additionalText: "* Data should be available for analysis in real or near-real time through a continuous and automated data acquisition process.\n* The technology will have the capability to consolidate meter readings to create virtual meter points. It can add and subtract readings from multiple meters at the same interval to produce a calculated time series of energy use.\n* The technology will be able to upload and store a minimum history of 5 years of energy use or other data from standard spreadsheet or text file formats.\n* The technology will have the capacity to store at least 5 years of data, trended at intervals up to 15 minutes for analysis, reporting, and visualization.\n* The technology will have the ability to parse out data cluster displays into coincident time intervals ranging from 10 minutes to 1 year."
+            },
+            {
+              id: "1.3",
+              label: "Building automation system (BAS) data integration",
+              description: `The technology will extract data from the building control systems for Fault Detection and Diagnostics (FDD) functions:
+* The data collection interval will be selected to meet the needs of the FDD software and is compatible with BAS trending (15-minute interval data most common). Changes in polling rates may be required.
+* Integration with non-legacy BAS providers will occur via common protocols (e.g., BACnet, Modbus) or through the BAS vendor’s gateway. If unsupported, a data gateway or protocol converter is required.
+* BAS data will be integrated as follows:`,
+              inputType: "multipleCheckboxGroups",
+              groups: [
+                {
+                  title: "These data include:",
+                  options: ["chiller/boiler plant data", "air handler data", "zone device data"]
+                },
+                {
+                  title: "Integration will include but not be limited to",
+                  options: ["energy meter data already connected into the BAS", "equipment status", "setpoints", "valve/damper control signals", "fan speed", "air flow rate", "pump water flow rate", "air and water temperatures"]
+                }
+              ],
+              additionalText: "* Near-real time data polling or end-of-day batch uploads are acceptable.\n* Data integration will not adversely affect existing BAS control or visualization functions."
+            },
+            {
+              id: "1.4",
+              label: "Additional monitoring required or preferred",
+              description: "",
+              inputType: "textbox",
+              placeholder: "Enter additional monitoring details..."
+            },
+            {
+              id: "1.5",
+              label: "Metadata / data tagging",
+              description: `The use of standard naming conventions and a metadata schema (data tags) improves the ability to consistently analyze, visualize, and derive value from operational data. A metadata schema will be selected for the project, defining at a minimum: 
+• a data dictionary for all terms used;
+• a data taxonomy providing categories and subcategories for the defined terms.
+The specific version of the schema should be noted, as well as whether it is an adaptation or extension of an existing schema.
+The EMIS vendor will provide appropriate metadata in alignment with the selected schema.`,
+              inputType: "none"
+            },
+            {
+              id: "1.6",
+              label: "Other data sources and APIs",
+              description: "* The software platform must have the ability to collect dynamic and static data from multiple sources (e.g., BACnet, Modbus, OPC, CSV, RDBMS, SQL).\n* It will integrate with external weather stations or third-party weather providers. Degree-days will be calculated automatically.\n* It will integrate with existing lighting control and plug control systems (List as needed).\n* It will integrate with the owner’s CMMS (Indicate vendor).\n* It will integrate with existing IoT-based sensing (List technologies/protocols).\n* Provision of an API to support integration with third-party applications.",
+              inputType: "prepopulated",
+              defaultValue: "Pre-Populated TEXT TO EDIT OR DELETE"
+            },
+            {
+              id: "1.7",
+              label: "Data validation",
+              description: `* The data connection to the EMIS will be validated by the EMIS vendor. In case of interruption, data should be stored locally for at least two weeks (hourly) or one week (sub-hourly).
+* The technology will detect meter/sensor quality issues (gaps, spikes, flat-lines) and provide auto-correction options.
+* The EMIS vendor will help identify inaccurate data.
+* It will address insufficient intervals, false diagnostics, dropped communications, and erroneous tagging.`,
+              inputType: "none"
+            }
+          ]
+        },
+        {
+          category: "2. Utility Bill Analytics",
+          subItems: [
+            {
+              id: "2.1",
+              label: "Utility bill management",
+              description: `* The technology will provide the capability to allocate utility costs to different tenants or occupant groups for recharges and tenant billing.
+* It will provide capabilities for savings analysis and comparison through benchmarking, deriving energy use intensity, aligning bills with a calendar month, and normalizing usage using protocols such as IPMVP Option C.`,
+              inputType: "none"
+            },
+            {
+              id: "2.2",
+              label: "Utility budgeting",
+              description: `* The technology will chart and report energy costs against budget, indicating surplus/deficit.
+* It will include custom utility tariffs for energy cost and demand calculations.`,
+              inputType: "none"
+            },
+            {
+              id: "2.3",
+              label: "GHG tracking",
+              description: `* The technology will calculate, monitor, and report GHG emissions associated with facility energy use. It will supply recommended GHG conversion factors and allow user entry for custom factors.
+* GHG calculations will account for on-site renewables, where relevant.`,
+              inputType: "none"
+            }
+          ]
+        },
+        {
+          category: "3. Interval Meter Data Analytics",
+          subItems: [
+            {
+              id: "3.1",
+              label: "Energy consumption tracking",
+              description: `* The technology will track and provide flexible charting for multiple meters on an hourly or sub-hourly (e.g., 15-minute) basis.
+• Whole-building level: electricity, gas, water, steam, etc.
+• End-use submetered level: Pumping system, Air Compressors, HVAC, lighting, etc.
+• Equipment submetered level: chiller, boiler, cooling tower, pump, etc.
+• Renewable energy sources: Solar photovoltaic, biogas, etc.
+* Energy cost tracking:
+• Calculate and provide visualizations of near real-time/daily/monthly and historic energy costs.
+• Use facility-specific tariffs in $/energy unit.
+* Energy unit conversion:
+• Normalize data according to production rates, floor area, hours of operation, heating/cooling degree days.
+• Convert, display, and report energy use in total GJ and additional metrics (e.g., CO2 equivalent).`,
+              inputType: "none"
+            },
+            {
+              id: "3.2",
+              label: "Energy performance analysis",
+              description: `* Time series load profiling:
+• Provide plots of at least 168-hour periods of hourly (or more frequent) energy usage.
+• Options to select time period and data points.
+• Allow multiple user-selected data points on a single chart.
+* Benchmarking:
+Benchmark using meter-level KPIs, with options for custom KPIs and normalization, configurable for prior [day/week/month/year].
+* Baseline energy consumption modeling:
+• Characterize and predict typical energy usage based on key drivers (weather, production, time, etc.).
+• Use baseline for energy savings calculations, load predictions, comparisons, and anomaly detection.
+• Support multiple baselines (e.g., prior year, corporate goal).
+* Energy anomaly detection:
+• Identify and flag unexpectedly high or low energy use at facility and submeter levels.
+• Allow user-defined thresholds.
+• Track anomaly duration/persistence.
+* Building energy dashboards and reports:
+• Provide a public-facing dashboard for occupants/visitors and an operator-facing dashboard for detailed performance.
+• Supply necessary hardware/software for shareable reports.
+* Demand monitoring:
+• Provide daily/monthly/annual peak load monitoring.
+• Notify via e-mail or text when critical loads exceed thresholds.`,
+              inputType: "none"
+            }
+          ]
+        },
+        {
+          category: "4. System Data Analytics",
+          subItems: [
+            { id: "4.1", label: "Fault and Optimization Opportunity Detection", description: "The technology will detect faults and identify optimization opportunities.", inputType: "none" },
+            { id: "4.2", label: "Fault and Opportunity Diagnosis", description: "The technology will diagnose faults and opportunities.", inputType: "none" },
+            { id: "4.3", label: "FDD Configuration", description: "The technology will configure FDD settings.", inputType: "none" },
+            { id: "4.4", label: "Fault management and FDD results presentation", description: "The technology will present FDD results and manage faults.", inputType: "none" },
+            { id: "4.5", label: "Work order management", description: "The technology will manage work orders.", inputType: "none" },
+            { id: "4.6", label: "System-level diagnostic supports", description: "The technology will provide system-level diagnostic support.", inputType: "none" }
+          ]
+        },
+        {
+          category: "5. Automated System Optimization",
+          subItems: [
+            { id: "5.1", label: "HVAC performance optimization", description: "The technology will optimize HVAC performance.", inputType: "none" },
+            { id: "5.2", label: "Peak demand charge minimization", description: "The technology will minimize peak demand charges.", inputType: "none" },
+            { id: "5.3", label: "Provision of grid services", description: "The technology will provision grid services.", inputType: "none" },
+            { id: "5.4", label: "Other supervisory control strategies", description: "The technology will implement other supervisory control strategies.", inputType: "none" }
+          ]
+        },
+        {
+          category: "6. Project Management and Reporting",
+          subItems: [
+            {
+              id: "6.1",
+              label: "Project management and verification of savings",
+              description: `* The technology will provide the capability to log and track the status of energy efficiency projects (e.g., start, ongoing, finish) and personnel assigned. It will allow users to annotate charts with key events.
+* It will provide M&V capabilities in accordance with IPMVP Option C (or similar standards, e.g., ASHRAE Guideline 14) with requirements including:
+  o Baseline model fitness metrics (e.g., NMBE, CV[RMSE], R2)
+  o Ability to create multiple baseline models for a single meter
+  o M&V using monthly and interval data
+  o Conversion of savings to common units (e.g., GJ, $) and normalization (e.g., GJ/sq ft/yr)
+  o Use of ambient temperature data within the baseline models
+  o Acquisition of additional independent variable data (e.g., production rate, hours of operation)
+* It will provide the ability to express savings for each project or in aggregate, with outputs such as time-series charts, CUSUM charts, and report tables.
+* It will support savings analysis using IPMVP Option B.`,
+              inputType: "textbox",
+              placeholder: "Enter project management details..."
+            },
+            {
+              id: "6.2",
+              label: "Notification, reporting and data export",
+              description: `* The technology will provide customizable notification schemes (e.g., work orders, e-mail, phone, text) for data quality alerts, anomaly detection, and fault detection.
+* It will provide year-over-year energy, cost, and performance reports in a specified format.
+* Users can create and save custom reports.
+* It will export reports to the following file formats:`,
+              inputType: "checkboxGroup",
+              options: [".pdf", ".doc/.docx", ".html"],
+              additionalText: `The technology will allow users to export data (all, or selected points or totalizations) to the following file formats:
+  o .xlsx/.xls 
+  o .csv
+  o .xml`
+            }
+          ]
+        },
+        {
+          category: "7. IT Requirements",
+          subItems: [
+            { id: "7.1", label: "Data storage and backup", description: "The technology will provide secure data storage and backup.", inputType: "none" },
+            { id: "7.2", label: "Software hosting and data ownership", description: "The technology will specify software hosting and data ownership arrangements.", inputType: "none" },
+            { id: "7.3", label: "Cybersecurity", description: "The technology will ensure robust cybersecurity measures.", inputType: "none" },
+            { id: "7.4", label: "Permissions and access control", description: "The technology will enforce permissions and access control.", inputType: "none" },
+            { id: "7.5", label: "Usability", description: "The technology will prioritize ease of use.", inputType: "none" },
+            { id: "7.6", label: "Networking", description: "The technology will meet networking requirements.", inputType: "none" }
+          ]
+        },
+        {
+          category: "8. Technical Warranty, Support, and Training and Commissioning",
+          subItems: [
+            { id: "8.1", label: "Warranty", description: "The technology will provide a comprehensive warranty.", inputType: "none" },
+            { id: "8.2", label: "Technical support", description: "The technology will offer technical support.", inputType: "none" },
+            { id: "8.3", label: "Training", description: "The technology will include training.", inputType: "none" },
+            { id: "8.4", label: "Testing and Commissioning", description: "The technology will provide testing and commissioning services.", inputType: "none" }
+          ]
+        }
+      ];
+
+      /* Build EMIS Top Navigation with Numbering and Separation Lines */
+      function buildEmisTopnav() {
+        const topnavList = document.getElementById("emis-topnav-list");
+        topnavList.innerHTML = "";
+        emisData.forEach((section, idx) => {
+          const li = document.createElement("li");
+          li.textContent = `${section.category}`;
+          if (idx === 0) li.classList.add("active");
+          li.addEventListener("click", () => {
+            document.querySelectorAll("#emis-topnav-list li").forEach(item => item.classList.remove("active"));
+            li.classList.add("active");
+            buildEmisContent(idx);
+          });
+          topnavList.appendChild(li);
+        });
+      }
+
+      /* Build EMIS Content */
+      function buildEmisContent(selectedIndex = 0) {
+        const contentsDiv = document.getElementById("emis-tab-contents");
+        contentsDiv.innerHTML = "";
+        const section = emisData[selectedIndex];
+        section.subItems.forEach((item, idx) => {
+          const row = document.createElement("div");
+          row.classList.add("emis-item");
+          
+          // Header with checkbox and title
+          const headerDiv = document.createElement("div");
+          headerDiv.classList.add("emis-header");
+          const mainCb = document.createElement("input");
+          mainCb.type = "checkbox";
+          mainCb.id = `emis-${selectedIndex}-${idx}-main`;
+          mainCb.setAttribute("data-id", item.id);
+          headerDiv.appendChild(mainCb);
+          const titleEl = document.createElement("label");
+          titleEl.htmlFor = mainCb.id;
+          titleEl.innerHTML = `<strong>${item.id} - ${item.label}</strong>`;
+          headerDiv.appendChild(titleEl);
+          row.appendChild(headerDiv);
+          
+          // Content area
+          const contentDiv = document.createElement("div");
+          contentDiv.classList.add("content");
+          if (item.description) {
+            const lines = item.description.split("\n");
+            lines.forEach(line => {
+              const p = document.createElement("p");
+              p.textContent = line.trim();
+              contentDiv.appendChild(p);
+            });
+          }
+          // Composite input (for items with parts)
+          if (item.inputType === "composite") {
+            item.parts.forEach(part => {
+              const partDiv = document.createElement("div");
+              partDiv.classList.add("composite-part");
+              const partLabel = document.createElement("label");
+              partLabel.textContent = part.partLabel;
+              partDiv.appendChild(partLabel);
+              if (part.inputType === "textbox") {
+                const inp = document.createElement("input");
+                inp.type = "text";
+                inp.placeholder = part.placeholder;
+                partDiv.appendChild(inp);
+              } else if (part.inputType === "radioAndTextbox") {
+                const radioDiv = document.createElement("div");
+                radioDiv.classList.add("radio-group");
+                part.options.forEach(opt => {
+                  const radioWrapper = document.createElement("div");
+                  const radio = document.createElement("input");
+                  radio.type = "radio";
+                  radio.name = `emis-${item.id}-interval`;
+                  radio.value = opt;
+                  const radioLabel = document.createElement("label");
+                  radioLabel.textContent = opt;
+                  radioWrapper.appendChild(radio);
+                  radioWrapper.appendChild(radioLabel);
+                  radioDiv.appendChild(radioWrapper);
+                });
+                partDiv.appendChild(radioDiv);
+                const intervalInp = document.createElement("input");
+                intervalInp.type = "text";
+                intervalInp.placeholder = part.textboxPlaceholder;
+                intervalInp.style.display = "none";
+                partDiv.appendChild(intervalInp);
+                const radios = partDiv.querySelectorAll("input[type='radio']");
+                radios.forEach(radio => {
+                  radio.addEventListener("change", () => {
+                    intervalInp.style.display = (radio.value === "sub-hourly" && radio.checked) ? "block" : "none";
+                  });
+                });
+              }
+              contentDiv.appendChild(partDiv);
+            });
+            if (item.additionalText) {
+              const addEl = document.createElement("p");
+              addEl.textContent = item.additionalText;
+              contentDiv.appendChild(addEl);
+            }
+          }
+          // Textbox input type
+          else if (item.inputType === "textbox") {
+            const inp = document.createElement("input");
+            inp.type = "text";
+            inp.placeholder = item.placeholder;
+            contentDiv.appendChild(inp);
+          }
+          // Checkbox group input type
+          else if (item.inputType === "checkboxGroup") {
+            const groupDiv = document.createElement("div");
+            groupDiv.classList.add("checkbox-group");
+            item.options.forEach((opt, oIdx) => {
+              const optWrapper = document.createElement("div");
+              const cbOpt = document.createElement("input");
+              cbOpt.type = "checkbox";
+              cbOpt.id = `emis-${selectedIndex}-${idx}-group-${oIdx}`;
+              const lblOpt = document.createElement("label");
+              lblOpt.htmlFor = cbOpt.id;
+              lblOpt.textContent = opt;
+              optWrapper.appendChild(cbOpt);
+              optWrapper.appendChild(lblOpt);
+              groupDiv.appendChild(optWrapper);
+            });
+            contentDiv.appendChild(groupDiv);
+          }
+          // Multiple checkbox groups
+          else if (item.inputType === "multipleCheckboxGroups") {
+            item.groups.forEach(group => {
+              const groupContainer = document.createElement("div");
+              groupContainer.classList.add("multi-group");
+              const groupTitle = document.createElement("div");
+              groupTitle.classList.add("group-title");
+              groupTitle.textContent = group.title;
+              groupContainer.appendChild(groupTitle);
+              const groupCheckboxes = document.createElement("div");
+              groupCheckboxes.classList.add("checkbox-group");
+              group.options.forEach((opt, oIdx) => {
+                const optWrapper = document.createElement("div");
+                const cbOpt = document.createElement("input");
+                cbOpt.type = "checkbox";
+                cbOpt.id = `emis-${selectedIndex}-${idx}-group-${group.title}-${oIdx}`;
+                const lblOpt = document.createElement("label");
+                lblOpt.htmlFor = cbOpt.id;
+                lblOpt.textContent = opt;
+                optWrapper.appendChild(cbOpt);
+                optWrapper.appendChild(lblOpt);
+                groupCheckboxes.appendChild(optWrapper);
+              });
+              groupContainer.appendChild(groupCheckboxes);
+              contentDiv.appendChild(groupContainer);
+            });
+            if (item.additionalText) {
+              const addEl = document.createElement("p");
+              addEl.textContent = item.additionalText;
+              contentDiv.appendChild(addEl);
+            }
+          }
+          contentDiv.style.display = "none";
+          mainCb.addEventListener("change", () => {
+            contentDiv.style.display = mainCb.checked ? "block" : "none";
+          });
+          row.appendChild(contentDiv);
+          contentsDiv.appendChild(row);
+        });
+      }
+
+      /* ========= Collect EMIS Responses and Build Report ========= */
+      document.getElementById("emis-submit").addEventListener("click", () => {
+        saveCheckboxStates(); // Save current EMIS page inputs
+        const emisResponses = {};
+        emisData.forEach((section) => {
+          const sectionTitle = section.category;
+          emisResponses[sectionTitle] = [];
+          section.subItems.forEach((item) => {
+            const cb = document.querySelector(`input[data-id="${item.id}"]`);
+            if (cb && cb.checked) {
+              let additional = "";
+              if (item.inputType === "textbox") {
+                const inp = cb.closest(".emis-item").querySelector("input[type='text']");
+                additional = inp ? inp.value : "";
+              } else if (item.inputType === "checkboxGroup") {
+                let selections = [];
+                const groupCbs = cb.closest(".emis-item").querySelectorAll(".checkbox-group input[type='checkbox']");
+                groupCbs.forEach(optCb => {
+                  if (optCb.checked) selections.push(optCb.nextSibling.textContent);
+                });
+                additional = selections.join(", ");
+              } else if (item.inputType === "composite") {
+                let compData = "";
+                item.parts.forEach(part => {
+                  if (part.inputType === "textbox") {
+                    const inp = document.querySelector(`input[placeholder="${part.placeholder}"]`);
+                    compData += part.partLabel + " " + (inp ? inp.value : "") + "\n";
+                  } else if (part.inputType === "radioAndTextbox") {
+                    const radios = document.querySelectorAll(`input[name="emis-${item.id}-interval"]`);
+                    let radioVal = "";
+                    radios.forEach(radio => { if (radio.checked) radioVal = radio.value; });
+                    compData += part.partLabel + " " + radioVal;
+                    if (radioVal === "sub-hourly") {
+                      const txt = document.querySelector(`input[placeholder="${part.textboxPlaceholder}"]`);
+                      compData += " (" + (txt ? txt.value : "") + " minutes)";
+                    }
+                    compData += "\n";
+                  }
+                });
+                additional = compData;
+              } else if (item.inputType === "multipleCheckboxGroups") {
+                let multiData = "";
+                item.groups.forEach(group => {
+                  let groupSelections = [];
+                  const container = cb.closest(".emis-item");
+                  const checkboxes = container.querySelectorAll(`div.multi-group .checkbox-group input[type='checkbox']`);
+                  checkboxes.forEach(optCb => {
+                    if (optCb.checked) groupSelections.push(optCb.nextSibling.textContent);
+                  });
+                  multiData += group.title + ": " + groupSelections.join(", ") + "\n";
+                });
+                additional = multiData;
+              }
+              emisResponses[section.category].push({
+                question: `${item.id} - ${item.label}`,
+                details: item.description,
+                additional: additional
+              });
+            }
+          });
+        });
+        responses.emis = emisResponses;
+        showPage("report-page");
+        buildReport();
+      });
+
+      /* ========= Build Report ========= */
+      function buildReport() {
+    const reportDiv = document.getElementById("report-content");
+    reportDiv.innerHTML = "";
+
+    // Organization Information
+    const orgSection = document.createElement("div");
+    orgSection.innerHTML = `<h2>Organization Information</h2>
+      <p><strong>Application ID:</strong> ${userInfo.appId}</p>
+      <p><strong>Organization Name:</strong> ${userInfo.orgName}</p>
+      <p><strong>Facility Type:</strong> ${userInfo.orgType}</p>
+      <p><strong>Facility Address:</strong> ${userInfo.siteAddress}</p>
+      <p><strong>Facilitator Name:</strong> ${userInfo.facilitatorName}</p>
+      <p><strong>Attendee Names:</strong> ${userInfo.attendeeNames.join(", ")}</p>`;
+    reportDiv.appendChild(orgSection);
+
+    // Technical Objectives
+    const objSection = document.createElement("div");
+    objSection.innerHTML = `<h2>Technical Objectives</h2>`;
+    for (let key in responses.objectives) {
+        if (responses.objectives[key] === "True") {
+            const p = document.createElement("p");
+            p.innerHTML = `<input type="checkbox" checked disabled /> ${key}`;
+            objSection.appendChild(p);
+        }
+    }
+    reportDiv.appendChild(objSection);
+
+    // EMIS Technical Specifications Report
+    const emisSection = document.createElement("div");
+    emisSection.innerHTML = `<h2>EMIS Technical Specifications</h2>`;
+    document.querySelectorAll("input[type='checkbox']").forEach(checkbox => {
+        if (checkbox.checked) {
+            const label = document.querySelector(`label[for='${checkbox.id}']`);
+            if (label) {
+                const p = document.createElement("p");
+                p.innerHTML = `<input type="checkbox" checked disabled /> ${label.textContent}`;
+                emisSection.appendChild(p);
+            }
+        }
+    });
+    reportDiv.appendChild(emisSection);
+}
+
+
+      /* ========= Download Report Buttons ========= */
+      document.getElementById("download-pdf").addEventListener("click", downloadPDF);
+      document.getElementById("download-docx").addEventListener("click", downloadDOCX);
+
+      function downloadPDF() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        let y = 20;
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const margin = 14;
+
+        // Title
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(20);
+        doc.text("Energy Management Assessment Report", pageWidth / 2, y, { align: "center" });
+        y += 12;
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+        doc.text(`Generated on: ${new Date().toLocaleString()}`, pageWidth / 2, y, { align: "center" });
+        y += 16;
+
+        // Organization Information Section
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(12);
+        doc.text("Organization Information", margin, y);
+        y += 8;
+        doc.setFont("helvetica", "normal");
+        const orgInfo = [
+          `Application ID: ${userInfo.appId}`,
+          `Organization Name: ${userInfo.orgName}`,
+          `Facility Type: ${userInfo.orgType}`,
+          `Facility Address: ${userInfo.siteAddress}`,
+          `Facilitator Name: ${userInfo.facilitatorName}`,
+          `Attendee Names: ${userInfo.attendeeNames.join(", ")}`
+        ];
+        orgInfo.forEach(info => {
+          const splitText = doc.splitTextToSize(info, pageWidth - margin * 2);
+          doc.text(splitText, margin, y);
+          y += splitText.length * 8;
+        });
+        y += 10;
+
+        // Technical Objectives Section
+        doc.setFont("helvetica", "bold");
+        doc.text("Technical Objectives", margin, y);
+        y += 8;
+        doc.setFont("helvetica", "normal");
+        for (let key in responses.objectives) {
+          const objectiveText = `${key}: ${responses.objectives[key]}`;
+          const splitText = doc.splitTextToSize(objectiveText, pageWidth - margin * 2);
+          doc.text(splitText, margin, y);
+          y += splitText.length * 8;
+        }
+        y += 10;
+
+        // EMIS Technical Specifications Section
+        doc.setFont("helvetica", "bold");
+        doc.text("EMIS Technical Specifications", margin, y);
+        y += 8;
+        doc.setFont("helvetica", "normal");
+        for (let sec in responses.emis) {
+          const sectionHeader = sec;
+          const splitHeader = doc.splitTextToSize(sectionHeader, pageWidth - margin * 2);
+          doc.text(splitHeader, margin, y);
+          y += splitHeader.length * 8;
+          responses.emis[sec].forEach(item => {
+            const itemText = `${item.question}\n${item.details}\nAdditional: ${item.additional ? item.additional : "N/A"}`;
+            const splitItemText = doc.splitTextToSize(itemText, pageWidth - margin * 2);
+            doc.text(splitItemText, margin + 10, y);
+            y += splitItemText.length * 8 + 4;
+          });
+          y += 4;
+        }
+
+        // Footer with page numbers
+        const pageCount = doc.internal.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+          doc.setPage(i);
+          doc.setFontSize(9);
+          doc.text(`Page ${i} of ${pageCount}`, pageWidth - margin, doc.internal.pageSize.getHeight() - 10, { align: "right" });
+        }
+
+        doc.save("Energy-Management-Assessment-Report.pdf");
+      }
+
+      async function downloadDOCX() {
+        const { Document, Packer, Paragraph, TextRun, AlignmentType, WidthType, ImageRun } = window.docx;
+        const doc = new Document({
+          sections: [{
+            children: [
+              new Paragraph({
+                children: [new TextRun({ text: "Energy Management Assessment Report", bold: true, size: 32 })],
+                alignment: AlignmentType.CENTER
+              }),
+              new Paragraph({ text: `Generated on: ${new Date().toLocaleString()}`, size: 20, alignment: AlignmentType.CENTER }),
+              new Paragraph(""),
+              new Paragraph({ text: "Organization Information", heading: "Heading2" }),
+              new Paragraph({ text: `Application ID: ${userInfo.appId}` }),
+              new Paragraph({ text: `Organization Name: ${userInfo.orgName}` }),
+              new Paragraph({ text: `Facility Type: ${userInfo.orgType}` }),
+              new Paragraph({ text: `Facility Address: ${userInfo.siteAddress}` }),
+              new Paragraph({ text: `Facilitator Name: ${userInfo.facilitatorName}` }),
+              new Paragraph({ text: `Attendee Names: ${userInfo.attendeeNames.join(", ")}` }),
+              new Paragraph(""),
+              new Paragraph({ text: "Technical Objectives", heading: "Heading2" }),
+              ...Object.keys(responses.objectives).map(key =>
+                new Paragraph({ text: `${key}: ${responses.objectives[key]}`, indent: { left: 400 } })
+              ),
+              new Paragraph(""),
+              new Paragraph({ text: "EMIS Technical Specifications", heading: "Heading2" }),
+              ...Object.keys(responses.emis).map(sec =>
+                [
+                  new Paragraph({ text: sec, heading: "Heading3", indent: { left: 200 } }),
+                  ...responses.emis[sec].map(item =>
+                    new Paragraph({ text: `${item.question}\n${item.details}\nAdditional: ${item.additional ? item.additional : "N/A"}`, indent: { left: 600 } })
+                  )
+                ]
+              ).flat()
+            ]
+          }]
+        });
+        const blob = await Packer.toBlob(doc);
+        saveAs(blob, "Energy-Management-Assessment-Report.docx");
+      }
+
+      /* ========= Build Report ========= */
+      function buildReport() {
+        const reportDiv = document.getElementById("report-content");
+        reportDiv.innerHTML = "";
+        // Organization Information
+        const orgSection = document.createElement("div");
+        orgSection.innerHTML = `<h2>Organization Information</h2>
+          <p><strong>Application ID:</strong> ${userInfo.appId}</p>
+          <p><strong>Organization Name:</strong> ${userInfo.orgName}</p>
+          <p><strong>Facility Type:</strong> ${userInfo.orgType}</p>
+          <p><strong>Facility Address:</strong> ${userInfo.siteAddress}</p>
+          <p><strong>Facilitator Name:</strong> ${userInfo.facilitatorName}</p>
+          <p><strong>Attendee Names:</strong> ${userInfo.attendeeNames.join(", ")}</p>`;
+        reportDiv.appendChild(orgSection);
+        // Technical Objectives
+        const objSection = document.createElement("div");
+        objSection.innerHTML = `<h2>Technical Objectives</h2>`;
+        for (let key in responses.objectives) {
+          const p = document.createElement("p");
+          p.textContent = `${key}: ${responses.objectives[key]}`;
+          objSection.appendChild(p);
+        }
+        reportDiv.appendChild(objSection);
+        // EMIS Technical Specifications Report
+        const emisSection = document.createElement("div");
+        emisSection.innerHTML = `<h2>EMIS Technical Specifications</h2>`;
+        for (let sec in responses.emis) {
+          const secDiv = document.createElement("div");
+          secDiv.innerHTML = `<h3>${sec}</h3>`;
+          responses.emis[sec].forEach(item => {
+            const p = document.createElement("p");
+            p.innerHTML = `<strong>${item.question}</strong><br/>${item.details.replace(/\n/g, "<br/>")}<br/>Additional: ${item.additional ? item.additional : "N/A"}`;
+            secDiv.appendChild(p);
+          });
+          emisSection.appendChild(secDiv);
+        }
+        reportDiv.appendChild(emisSection);
+      }
+
+      /* ========= Custom Alert ========= */
+      document.getElementById("alert-ok").addEventListener("click", () => {
+        document.getElementById("custom-alert").style.display = "none";
+      });
+
+      /* ========= Initialization & Other Functions ========= */
+      // (You can add your functions for categories, progress, charts, etc. here)
+
+      // For demonstration, we assume the MSAL/auth and SharePoint upload functions exist separately.
+
+      // Initialize the application after DOM is loaded
+      document.addEventListener("DOMContentLoaded", () => {
+        // Optionally, load any saved objectives form data when the page loads
+        loadFormData("objectives-form", "objectivesData");
+      });
+    </script>
+  </body>
+</html>
